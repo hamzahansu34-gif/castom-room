@@ -1,53 +1,50 @@
-name: Android ROM Build
+name: Android ROM Yapısı
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ "main", "master" ]
 
 jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      - name: Depoyu Klonla
+      - name: Depoyu Klonla ve Hazırlık Yap
         uses: actions/checkout@v4
 
-      - name: Swap Alanını Genişlet
-        uses: pierotofy/set-swap-space@master
-        with:
-          swap-size-gb: 10
-
-      - name: Derleme Ortamını Hazırla
+      - name: Sistem Gereksinimlerini ve Paketleri Yükle
         run: |
           sudo apt-get update
-          sudo apt-get install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip
+          sudo apt-get install -y git bc bison build-esential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zlib1g-dev
 
-      - name: Repo Komutunu Kur
+      - name: Repo Aracını Kur
         run: |
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
-          echo "$HOME/bin" >> $GITHUB_PATH
+          export PATH=~/bin:$PATH
 
-      - name: ROM Kaynak Kodunu İndir ve Derle
+      - name: Git Kimlik Ayarla
         run: |
           git config --global user.name "Hamza"
           git config --global user.email "hamza@example.com"
-          mkdir -p ~/android/rom && cd ~/android/rom
-          repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --git-lfs
-          repo sync -c --no-clone-bundle --optimized-fetch --prune -j4
-          
-          mkdir -p device/samsung
-          git clone https://github.com/daavvis/device_samsung_degaswifie.git device/samsung/degaswifie
-          
-          source build/envsetup.sh
-          breakfast lineage_degaswifie-userdebug || breakfast lineage_degaswifie-eng
-          mka bacon -j$(nproc)
 
-      - name: ROM Dosyasını Kaydet
-        uses: actions/upload-artifact@v4
-        with:
-          name: custom-rom-zip
-          path: |
-            /home/runner/android/rom/out/target/product/**/*.zip
-            *.zip
+      - name: LineageOS 14.1 Kaynak Kodunu İndir
+        run: |
+          export PATH=~/bin:$PATH
+          mkdir -p ~/lineage
+          cd ~/lineage
+          repo init -u https://github.com/LineageOS/android.git -b lineage-14.1
+          repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j4
+
+      - name: Cihaz Ağacını Ekle
+        run: |
+          cd ~/lineage
+          mkdir -p device/samsung/degaswifi
+          git clone --depth 1 https://github.com/LineageOS/android_device_samsung_degaswifi.git device/samsung/degaswifi
+
+      - name: ROM Derlemesini Başlat
+        run: |
+          cd ~/lineage
+          export PATH=~/bin:$PATH
+          source build/envsetup.sh
+          breakfast lineage_degaswifi-userdebug
+          mka bacon -j4
