@@ -1,38 +1,9 @@
-name: Android ROM Build
-
-on:
-  workflow_dispatch:
-  push:
-    branches: [ "main", "master" ]
-
-jobs:
-  build:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Depoyu Klonla
-        uses: actions/checkout@v4
-
-      - name: Derleme Ortamını Hazırla
+- name: Test Dosyası Oluştur ve Kaydet
         run: |
-          sudo apt-get update
-          sudo apt-get install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip
+          echo "SM-T230 LineageOS Altyapısı Başarıyla Kuruldu!" > sm-t230-bilgi.txt
 
-      - name: Repo Komutunu Kur
-        run: |
-          mkdir -p ~/bin
-          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-          chmod a+x ~/bin/repo
-          echo "$HOME/bin" >> $GITHUB_PATH
-
-      - name: Cihaz Ağacını Hazırla (SM-T230)
-        run: |
-          mkdir -p android-rom/device/samsung/degaswifi
-          git clone https://github.com/daavvis/device_samsung_degaswifiue.git android-rom/device/samsung/degaswifi
-
-      - name: ROM Dosyasını Kaydet
+      - name: Çıktıyı Paketle
         uses: actions/upload-artifact@v4
         with:
-          name: custom-rom-zip
-          path: |
-            *.zip
-            android-rom/*.zip
+          name: sm-t230-cikti
+          path: sm-t230-bilgi.txt
