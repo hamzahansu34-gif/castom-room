@@ -12,19 +12,10 @@ jobs:
       - name: Depoyu Klonla
         uses: actions/checkout@v4
 
-      - name: Swap Alanını Genişlet
-        run: |
-          sudo swapoff -a
-          sudo fallocate -l 16G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
-          free -h
-
       - name: Derleme Ortamını Hazırla
         run: |
           sudo apt-get update
-          sudo apt-get install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip bc rsync
+          sudo apt-get install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip
 
       - name: Repo Komutunu Kur
         run: |
@@ -32,6 +23,11 @@ jobs:
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
           echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Cihaz Ağacını Hazırla (SM-T230UE)
+        run: |
+          mkdir -p android-rom/device/samsung/degaswifiue
+          git clone https://github.com/daavvis/device_samsung_degaswifiue.git android-rom/device/samsung/degaswifiue
 
       - name: ROM Kaynak Kodunu İndir ve Derle
         run: |
@@ -41,10 +37,17 @@ jobs:
           repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --git-lfs
           repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j$(nproc)
           
-          # Cihaz ağacını klonla
           mkdir -p device/samsung
-          git clone https://github.com/daavvis/device_samsung_degaswifiue.git device/samsung/degaswifi
+          cp -r $GITHUB_WORKSPACE/android-rom/device/samsung/degaswifiue device/samsung/
           
           source build/envsetup.sh
-          breakfast lineage_degaswifi-userdebug || breakfast lineage_degaswifi-eng
+          breakfast lineage_degaswifiue-userdebug || breakfast lineage_degaswifiue-eng
           mka bacon -j$(nproc)
+
+      - name: ROM Dosyasını Kaydet
+        uses: actions/upload-artifact@v4
+        with:
+          name: custom-rom-zip
+          path: |
+            *.zip
+            android-rom/*.zip
