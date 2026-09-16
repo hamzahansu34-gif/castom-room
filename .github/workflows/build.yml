@@ -1,4 +1,4 @@
-name: Android 5.1 ROM Build
+name: Android ROM Build
 
 on:
   workflow_dispatch:
@@ -15,7 +15,7 @@ jobs:
       - name: Derleme Ortamını Kur
         run: |
           sudo apt-get update
-          sudo apt-get install -y bison build-essential ca-certificates curl flex gettext git gnupg gperf htop liblz4-tool libncurses5 libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zip zlib1g-dev python2 python3
+          sudo apt-get install -y bison build-essential ca-certificates curl flex gettext git gnupg gperf htop liblz4-tool libncurses5 libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zip zlib1g-dev python3
 
       - name: Repo Komutunu Kur
         run: |
@@ -29,15 +29,34 @@ jobs:
           git config --global user.name "Hamza"
           git config --global user.email "hamza@example.com"
 
-      - name: Android 5.1 Kaynak Kodunu İndir ve Derle
+      - name: ROM Kaynak Kodunu İndir ve Derle
         run: |
           mkdir -p android-rom && cd android-rom
-          repo init -u https://github.com/LineageOS/android.git -b cm-12.1 --git-lfs
+          repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --git-lfs
           repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j$(nproc)
           
-          # Cihaz ağacını klonluyoruz
-          git clone https://github.com/daavvis/device_samsung_degaswifie.git device/samsung/degaswifi
+          # Doğru klasör adıyla klonlama yapılıyor
+          git clone https://github.com/daavvis/device_samsung_degaswifie.git device/samsung/degaswifie
           
           source build/envsetup.sh
-          lunch lineage_degaswifi-userdebug || lunch lineage_degaswifi-eng
+          lunch lineage_degaswifie-userdebug || lunch lineage_degaswifie-eng
           mka bacon -j$(nproc)
+
+      - name: ROM Dosyasını Kaydet
+        uses: actions/upload-artifact@v4
+        with:
+          name: custom-rom-zip
+          path: |
+            *.zip- name: ROM Kaynak Kodunu İndir ve Derle
+        run: |
+          mkdir -p android-rom && cd android-rom
+          repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --git-lfs
+          repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j$(nproc)
+          
+          # Bu satırı ilgili yere koyacaksın:
+          git clone https://github.com/daavvis/device_samsung_degaswifie.git device/samsung/degaswifie
+          
+          source build/envsetup.sh
+          lunch lineage_degaswifie-userdebug || lunch lineage_degaswifie-eng
+          mka bacon -j$(nproc)
+            android-rom/*.zip
