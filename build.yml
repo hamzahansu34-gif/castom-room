@@ -1,0 +1,21 @@
+- name: ROM Kaynak Kodunu İndir ve Derle
+        run: |
+          # Klasöre gir
+          mkdir -p android-rom && cd android-rom
+          
+          # Kaynak kodunu indir
+          repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --git-lfs
+          repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j$(nproc)
+          
+          # Cihaz ağacını doğru yola klonla
+          git clone https://github.com/daavvis/device_samsung_degaswifie.git device/samsung/degaswifi
+          
+          # --- KRİTİK HATA DÜZELTME BÖLÜMÜ ---
+          # LineageOS 14.1 için build/envsetup.sh yerine vendor/lineage/build/envsetup.sh kullanılmalı
+          # Veya en garantisi, yeni build sistemini yükle:
+          ./vendor/lineage/build/tools/roomservice.py degaswifi
+          
+          # Ortamı hazırla ve derlemeyi başlat
+          source build/envsetup.sh
+          lunch lineage_degaswifi-userdebug
+          mka bacon -j$(nproc)
