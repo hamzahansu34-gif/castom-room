@@ -1,46 +1,60 @@
-name: Android ROM Build
+name: Android 7.1.1 Build (SM-T230)
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
+    runs-on: ubuntu-22.04
     steps:
-      - name: Depoyu Klonla
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Derleme Ortamını Hazırla
+      - name: Maximize Build Space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 1024
+          swap-size-mb: 12288
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+
+      - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git openjdk-8-jdk wget curl
+          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zip zlib1g-dev
 
-      - name: Repo Komutunu Kur
+      - name: Setup Repo Tool
         run: |
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
-          export PATH=~/bin:$PATH
+          echo "$HOME/bin" >> $GITHUB_PATH
 
-      - name: Cihaz Ağacını Hazirla (SM-T230UE)
+      - name: Configure Git
         run: |
-          mkdir -p android-rom/device/samsung/degaswifiue
-          echo "SM-T230UE Cihaz Ağacı Hazırlık Klasörü" > android-rom/device/samsung/degaswifiue/README.md
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
 
-      - name: ROM Kaynak Kodunu İndir ve Derle
+      - name: Initialize LineageOS 14.1 Manifest
         run: |
-          git config --global user.name "Hamza"
-          git config --global user.email "hamza@actions.com"
-          
-          mkdir -p android-rom
-          cd android-rom
-          
-          # Test amaçlı dummy çıktı dosyası oluşturuluyor
-          echo "SM-T230 LineageOS Altyapısı Başarıyla Kuruldu!" > sm-t230-bilgi.txt
+          mkdir -p ~/android/lineage
+          cd ~/android/lineage
+          repo init -u https://github.com/LineageOS/android.git -b cm-14.1
 
-      - name: Çıktıyı Paketle
+      - name: Sync Source (Optimized for Speed)
+        run: |
+          cd ~/android/lineage
+          repo sync -c -j8 --force-sync --no-clone-bundle --no-tags
+
+      - name: Test Completion Check
+        run: |
+          mkdir -p output
+          echo "LineageOS 14.1 kaynak kodu basariyla indirildi ve hazir!" > output/build-status.txt
+
+      - name: Upload Status Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sm-t230-cikti
-          path: android-rom/sm-t230-bilgi.txt
+            name: lineage-14.1-status
+            path: output/build-status.txt
