@@ -1,33 +1,38 @@
-name: ROM Build
+name: Android ROM Build
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ "main", "master" ]
 
 jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout
+      - name: Depoyu Klonla
         uses: actions/checkout@v4
 
-      - name: Free Disk Space
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: true
-
-      - name: Install Dependencies
+      - name: Derleme Ortamını Hazırla
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zip zlib1g-dev
+          sudo apt-get install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip
 
-      - name: Setup Repo
+      - name: Repo Komutunu Kur
         run: |
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
           echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Cihaz Ağacını Hazırla (SM-T230)
+        run: |
+          mkdir -p android-rom/device/samsung/degaswifi
+          git clone https://github.com/daavvis/device_samsung_degaswifiue.git android-rom/device/samsung/degaswifi
+
+      - name: ROM Dosyasını Kaydet
+        uses: actions/upload-artifact@v4
+        with:
+          name: custom-rom-zip
+          path: |
+            *.zip
+            android-rom/*.zip
