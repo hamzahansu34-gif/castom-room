@@ -1,9 +1,31 @@
-- name: Test Dosyası Oluştur ve Kaydet
-        run: |
-          echo "SM-T230 LineageOS Altyapısı Başarıyla Kuruldu!" > sm-t230-bilgi.txt
+name: Android ROM Yapısı
 
-      - name: Çıktıyı Paketle
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Depoyu Klonla
+        uses: actions/checkout@v4
+
+      - name: Alan Temizliği ve Yer Açma
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/lib/android
+          df -h
+
+      - name: Derleme Ortamını Hazırla
+        run: |
+          echo "Ortam hazır, kaynak kodları çekme adımı buraya eklenecek."
+          mkdir -p output
+          echo "Test Rom Paketi" > output/rom.zip
+
+      - name: ROM Dosyasını Paketle ve Çıkart
         uses: actions/upload-artifact@v4
         with:
-          name: sm-t230-cikti
-          path: sm-t230-bilgi.txt
+          name: sm-t230-lineage-rom
+          path: output/rom.zip
