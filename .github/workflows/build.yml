@@ -32,7 +32,7 @@ jobs:
           export PATH=~/bin:$PATH
           mkdir -p ~/lineage
           cd ~/lineage
-          repo init -u https://github.com/LineageOS/android.git -b lineage-14.1
+          repo init -u https://github.com/LineageOS/android.git -b cm-14.1
           repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j4
 
       - name: Cihaz Ağacını Ekle
