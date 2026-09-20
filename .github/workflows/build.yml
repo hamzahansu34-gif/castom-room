@@ -30,8 +30,9 @@ jobs:
           repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --git-lfs
           repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j$(nproc)
           
-          # Alternatif ve güncel cihaz ağacı çekiliyor
-          git clone https://github.com/TheMuppets/proprietary_vendor_samsung.git -b cm-14.1 device/samsung/degaswifie || true
+          # Cihaz kodunu doğrudan doğru dizine indiriyoruz
+          mkdir -p device/samsung
+          git clone https://github.com/daavvis/device_sumsung_degaswifie.git device/samsung/degaswifie || git clone https://github.com/TheMuppets/proprietary_vendor_samsung.git device/samsung/degaswifie || true
           
           source build/envsetup.sh
           lunch lineage_degaswifie-userdebug || lunch lineage_degaswifie-eng
@@ -42,5 +43,5 @@ jobs:
         with:
           name: custom-rom-zip
           path: |
+            android-rom/out/target/product/degaswifie/*.zip
             *.zip
-            android-rom/*.zip
