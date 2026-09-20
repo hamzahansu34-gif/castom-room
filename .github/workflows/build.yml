@@ -30,8 +30,9 @@ jobs:
           repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --git-lfs
           repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j8 || repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j4
           
-          mkdir -p device/samsung
-          git clone https://github.com/daavvis/device_sumsung_degaswifie.git device/samsung/degaswifie || git clone https://github.com/TheMuppets/proprietary_vendor_samsung.git device/samsung/degaswifie || true
+          # Samsung Galaxy Tab 4 (degaswifie) cihaz dosyalarını doğru konuma çekiyoruz
+          mkdir -p device/samsung/degaswifie
+          git clone https://github.com/daavvis/device_samsung_degaswifie.git device/samsung/degaswifie -b cm-14.1 || true
           
           source build/envsetup.sh
           breakfast lineage_degaswifie-userdebug || breakfast lineage_degaswifie-eng
