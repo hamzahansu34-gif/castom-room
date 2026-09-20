@@ -7,11 +7,6 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      - name: Sistem Gereksinimlerini ve Alanı Temizle
-        uses: inner-bottle/ubuntu-core-cleaner@v1.3
-        with:
-          root-partition: true
-
       - name: Derleme Ortamını Kur
         run: |
           sudo apt-get update
@@ -35,7 +30,6 @@ jobs:
           repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --git-lfs
           repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j$(nproc)
           
-          # Samsung Galaxy Tab 4 (degaswifie) cihaz ağacı klonlanıyor
           git clone https://github.com/daavvis/device_samsung_degaswifie.git device/samsung/degaswifie
           
           source build/envsetup.sh
