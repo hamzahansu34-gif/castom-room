@@ -28,14 +28,13 @@ jobs:
         run: |
           mkdir -p android-rom && cd android-rom
           repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --git-lfs
-          repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j$(nproc)
+          repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j8 || repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j4
           
-          # Cihaz kodunu doğrudan doğru dizine indiriyoruz
           mkdir -p device/samsung
           git clone https://github.com/daavvis/device_sumsung_degaswifie.git device/samsung/degaswifie || git clone https://github.com/TheMuppets/proprietary_vendor_samsung.git device/samsung/degaswifie || true
           
           source build/envsetup.sh
-          lunch lineage_degaswifie-userdebug || lunch lineage_degaswifie-eng
+          breakfast lineage_degaswifie-userdebug || breakfast lineage_degaswifie-eng
           mka bacon -j$(nproc)
 
       - name: ROM Dosyasını Kaydet
