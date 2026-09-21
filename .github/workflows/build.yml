@@ -1,4 +1,4 @@
-name: Android ROM Build
+name: LineageOS 14.1 Build for SM-T230
 
 on:
   workflow_dispatch:
@@ -6,42 +6,73 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    
     steps:
-      - name: Derleme Ortamını Kur
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Maximize Build Space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 10240
+          swap-size-mb: 16384
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+
+      - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y bison build-essential ca-certificates curl flex gettext git gnupg gperf htop liblz4-tool libncurses5 libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zip zlib1g-dev python3
+          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zlib1g-dev python2 python3 openjdk-8-jdk make zip
 
-      - name: Repo Komutunu Kur
+      - name: Configure Git
+        run: |
+          git config --global user.name "Hamza"
+          git config --global user.email "hamza@builder.local"
+
+      - name: Install Repo Tool
         run: |
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
-          sudo ln -sf ~/bin/repo /usr/bin/repo
+          echo "$HOME/bin" >> $GITHUB_PATH
 
-      - name: Git Konfigürasyonunu Ayarla
+      - name: Initialize LineageOS Manifest
         run: |
-          git config --global user.name "Hamza"
-          git config --global user.email "hamza@example.com"
+          mkdir -p ~/lineage
+          cd ~/lineage
+          repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --depth=1
 
-      - name: ROM Kaynak Kodunu İndir ve Derle
+      - name: Setup Local Manifests and Clone Trees
         run: |
-          mkdir -p android-rom && cd android-rom
-          repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --git-lfs
-          repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j8 || repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j4
+          cd ~/lineage
+          mkdir -p .repo/local_manifests
           
-          # Samsung Galaxy Tab 4 (degaswifie) cihaz dosyalarını doğru konuma çekiyoruz
-          mkdir -p device/samsung/degaswifie
-          git clone https://github.com/daavvis/device_samsung_degaswifie.git device/samsung/degaswifie -b cm-14.1 || true
-          
+          # Eksik paket ve bağımlılık hatalarını önlemek için local_manifest dosyası oluşturuluyor
+          cat << 'EOF' > .repo/local_manifests/roomservice.xml
+          <?xml version="1.0" encoding="UTF-8"?>
+          <manifest>
+            <project name="LineageOS/android_device_samsung_degaswifi" path="device/samsung/degaswifi" remote="github" revision="cm-14.1" />
+            <project name="LineageOS/android_kernel_samsung_pxa1088" path="kernel/samsung/pxa1088" remote="github" revision="cm-14.1" />
+          </manifest>
+          EOF
+
+      - name: Sync Source Code
+        run: |
+          cd ~/lineage
+          repo sync -c -j$(nproc) --force-sync --no-clone-bundle --no-tags --optimized-fetch
+
+      - name: Start Compilation
+        run: |
+          cd ~/lineage
+          export ALLOW_MISSING_DEPENDENCIES=true
           source build/envsetup.sh
-          breakfast lineage_degaswifie-userdebug || breakfast lineage_degaswifie-eng
+          lunch lineage_degaswifi-userdebug
           mka bacon -j$(nproc)
 
-      - name: ROM Dosyasını Kaydet
+      - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: custom-rom-zip
-          path: |
-            android-rom/out/target/product/degaswifie/*.zip
-            *.zip
+          name: LineageOS-14.1-SM-T230
+          path: ~/lineage/out/target/product/degaswifi/*.zip
