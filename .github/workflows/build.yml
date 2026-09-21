@@ -24,7 +24,6 @@ jobs:
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
           
-          # PATH yolunu ekliyoruz ki repo komutu direkt tanınsın
           export PATH=~/bin:$PATH
           
           mkdir lineage && cd lineage
@@ -32,3 +31,11 @@ jobs:
           git config --global user.email "builder@action.com"
           repo init -u https://github.com/LineageOS/android.git -b cm-14.1
           repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune --force-sync -j8
+
+      - name: Cihaz Ağacını Çek ve Derlemeyi Başlat
+        run: |
+          cd lineage
+          git clone https://github.com/LineageOS/android_device_samsung_degaswifi.git -b cm-14.1 device/samsung/degaswifi
+          
+          source build/envsetup.sh
+          brunch degaswifi
