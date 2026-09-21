@@ -35,7 +35,7 @@ jobs:
       - name: Cihaz Ağacını Çek ve Derlemeyi Başlat
         run: |
           cd lineage
-          git clone https://github.com/LineageOS/android_device_samsung_degaswifi.git -b cm-14.1 device/samsung/degaswifi
+          git clone https://github.com/LineageOS/android_device_samsung_degaswifi.git -b lineage-14.1 device/samsung/degaswifi
           
           source build/envsetup.sh
           brunch degaswifi
