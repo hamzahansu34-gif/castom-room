@@ -5,21 +5,22 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Maximize Build Space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 10240
-          swap-size-mb: 16384
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
+      - name: Free Disk Space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/gh
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo apt-get purge -y azure-cli google-cloud-cli microsoft-edge-stable firefox powershell dotnet-sdk-6.0 dotnet-sdk-7.0 java-11-openjdk java-18-openjdk mysql-client redis-tools
+          sudo apt-get autoremove -y
+          sudo apt-get clean -y
+          df -h
 
       - name: Install System Dependencies
         run: |
@@ -49,7 +50,6 @@ jobs:
           cd ~/lineage
           mkdir -p .repo/local_manifests
           
-          # Eksik paket ve bağımlılık hatalarını önlemek için local_manifest dosyası oluşturuluyor
           cat << 'EOF' > .repo/local_manifests/roomservice.xml
           <?xml version="1.0" encoding="UTF-8"?>
           <manifest>
