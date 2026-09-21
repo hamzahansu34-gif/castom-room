@@ -5,74 +5,30 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
-    
+    runs-on: ubuntu-22.04
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Free Disk Space
+      - name: Alanı Temizle ve Arttır
         run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/gh
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          sudo apt-get purge -y azure-cli google-cloud-cli microsoft-edge-stable firefox powershell dotnet-sdk-6.0 dotnet-sdk-7.0 java-11-openjdk java-18-openjdk mysql-client redis-tools
-          sudo apt-get autoremove -y
-          sudo apt-get clean -y
+          sudo rm -rf /usr/share/dotnet /opt/gh /usr/local/lib/android/sdk
+          sudo apt-get clean
           df -h
 
-      - name: Install System Dependencies
+      - name: Bağımlılıkları Kur
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zlib1g-dev python2 python3 openjdk-8-jdk make zip
+          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev libelf-dev libncurses5 libncurses5-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zlib1g-dev python3 python-is-python3
 
-      - name: Configure Git
+      - name: Repo Aracını Kur
         run: |
-          git config --global user.name "Hamza"
-          git config --global user.email "hamza@builder.local"
-
-      - name: Install Repo Tool
-        run: |
-          mkdir -p ~/bin
+          mkdir ~/bin
+          PATH=~/bin:$PATH
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
-          echo "$HOME/bin" >> $GITHUB_PATH
 
-      - name: Initialize LineageOS Manifest
+      - name: Kaynak Kodları Çek (Repo Sync)
         run: |
-          mkdir -p ~/lineage
-          cd ~/lineage
-          repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --depth=1
-
-      - name: Setup Local Manifests and Clone Trees
-        run: |
-          cd ~/lineage
-          mkdir -p .repo/local_manifests
-          
-          cat << 'EOF' > .repo/local_manifests/roomservice.xml
-          <?xml version="1.0" encoding="UTF-8"?>
-          <manifest>
-            <project name="LineageOS/android_device_samsung_degaswifi" path="device/samsung/degaswifi" remote="github" revision="cm-14.1" />
-            <project name="LineageOS/android_kernel_samsung_pxa1088" path="kernel/samsung/pxa1088" remote="github" revision="cm-14.1" />
-          </manifest>
-          EOF
-
-      - name: Sync Source Code
-        run: |
-          cd ~/lineage
-          repo sync -c -j$(nproc) --force-sync --no-clone-bundle --no-tags --optimized-fetch
-
-      - name: Start Building
-        run: |
-          cd ~/lineage
-          export ALLOW_MISSING_DEPENDENCIES=true
-          source build/envsetup.sh
-          lunch lineage_degaswifi-userdebug
-          mka bacon -j$(nproc)
-
-      - name: Upload ROM Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: LineageOS-14.1-SM-T230
-          path: ~/lineage/out/target/product/degaswifi/*.zip
+          mkdir lineage && cd lineage
+          git config --global user.name "Builder"
+          git config --global user.email "builder@action.com"
+          repo init -u https://github.com/LineageOS/android.git -b lineage-14.1
+          repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune --force-sync -j8
