@@ -18,15 +18,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev libelf-dev libncurses5 libncurses5-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zlib1g-dev python3 python-is-python3
 
-      - name: Repo Aracını Kur
+      - name: Kaynak Kodları İndir ve Repo Kurulumu
         run: |
-          mkdir ~/bin
-          PATH=~/bin:$PATH
+          mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
-
-      - name: Kaynak Kodları Çek (Repo Sync)
-        run: |
+          
+          # PATH yolunu geçici olarak güncelliyoruz
+          export PATH=~/bin:$PATH
+          
           mkdir lineage && cd lineage
           git config --global user.name "Builder"
           git config --global user.email "builder@action.com"
