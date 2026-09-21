@@ -1,78 +1,45 @@
-name: LineageOS 14.1 Build for SM-T230
+name: LineageOS Build for SM-T230
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
-    
+    runs-on: ubuntu-22.04
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Free Disk Space
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/gh
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          sudo apt-get purge -y azure-cli google-cloud-cli microsoft-edge-stable firefox powershell dotnet-sdk-6.0 dotnet-sdk-7.0 java-11-openjdk java-18-openjdk mysql-client redis-tools
-          sudo apt-get autoremove -y
-          sudo apt-get clean -y
-          df -h
+      - name: Maximize Disk Space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 10240
+          swap-size-mb: 20480
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
 
-      - name: Install System Dependencies
+      - name: Set up Environment
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zlib1g-dev python2 python3 openjdk-8-jdk make zip
+          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zlib1g-dev
 
-      - name: Configure Git
-        run: |
-          git config --global user.name "Hamza"
-          git config --global user.email "hamza@builder.local"
-
-      - name: Install Repo Tool
+      - name: Initialize Repo and Sync
         run: |
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
-          echo "$HOME/bin" >> $GITHUB_PATH
-
-      - name: Initialize LineageOS Manifest
-        run: |
-          mkdir -p ~/lineage
-          cd ~/lineage
-          repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --depth=1
-
-      - name: Setup Local Manifests and Clone Trees
-        run: |
-          cd ~/lineage
-          mkdir -p .repo/local_manifests
+          export PATH=~/bin:$PATH
           
-          cat << 'EOF' > .repo/local_manifests/roomservice.xml
-          <?xml version="1.0" encoding="UTF-8"?>
-          <manifest>
-            <project name="LineageOS/android_device_samsung_degaswifi" path="device/samsung/degaswifi" remote="github" revision="cm-14.1" />
-            <project name="LineageOS/android_kernel_samsung_pxa1088" path="kernel/samsung/pxa1088" remote="github" revision="cm-14.1" />
-          </manifest>
-          EOF
-
-      - name: Sync Source Code
+          mkdir workspace
+          cd workspace
+          repo init -u https://github.com/LineageOS/android.git -b cm-14.1
+          repo sync -c -j8 --force-sync --no-clone-bundle --no-tags
+          
+          # Cihaz ağacı ve eklemeler buraya eklenecek
+          
+      - name: Start Building
         run: |
-          cd ~/lineage
-          repo sync -c -j$(nproc) --force-sync --no-clone-bundle --no-tags --optimized-fetch
-
-      - name: Start Compilation
-        run: |
-          cd ~/lineage
-          export ALLOW_MISSING_DEPENDENCIES=true
-          source build/envsetup.sh
-          lunch lineage_degaswifi-userdebug
-          mka bacon -j$(nproc)
-
-      - name: Upload ROM Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: LineageOS-14.1-SM-T230
-          path: ~/lineage/out/target/product/degaswifi/*.zip
+          echo "Derleme komutları buraya gelecek"
