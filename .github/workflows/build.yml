@@ -1,4 +1,4 @@
-name: LineageOS 14.1 Build for SM-T230
+name: LineageOS Build
 
 on:
   workflow_dispatch:
@@ -24,11 +24,11 @@ jobs:
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
           
-          # PATH yolunu geçici olarak güncelliyoruz
+          # PATH yolunu ekliyoruz ki repo komutu direkt tanınsın
           export PATH=~/bin:$PATH
           
           mkdir lineage && cd lineage
           git config --global user.name "Builder"
           git config --global user.email "builder@action.com"
-         repo init -u https://github.com/LineageOS/android.git -b cm-14.1
+          repo init -u https://github.com/LineageOS/android.git -b cm-14.1
           repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune --force-sync -j8
