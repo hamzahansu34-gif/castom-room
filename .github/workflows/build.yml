@@ -14,15 +14,19 @@ jobs:
       - name: Maximize Disk Space
         uses: easimon/maximize-build-space@master
         with:
-          root-reserve-mb: 10240
-          swap-size-mb: 20480
+          root-reserve-mb: 4096
+          swap-size-mb: 10240
           remove-dotnet: 'true'
           remove-android: 'true'
           remove-haskell: 'true'
           remove-codeql: 'true'
+          remove-docker-images: 'true'
 
-      - name: Set up Environment
+      - name: Set up Environment and Clean Cache
         run: |
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo apt-get clean
           sudo apt-get update
           sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zlib1g-dev
 
@@ -35,11 +39,9 @@ jobs:
           
           mkdir workspace
           cd workspace
-          repo init -u https://github.com/LineageOS/android.git -b cm-14.1
-          repo sync -c -j8 --force-sync --no-clone-bundle --no-tags
-          
-          # Cihaz ağacı ve eklemeler buraya eklenecek
-          
+          repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --depth=1
+          repo sync -c -j$(nproc) --force-sync --no-clone-bundle --no-tags --optimized-fetch
+
       - name: Start Building
         run: |
-          echo "Derleme komutları buraya gelecek"
+          echo "Derleme adımları buraya eklenecektir."
