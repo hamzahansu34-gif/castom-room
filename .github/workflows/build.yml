@@ -36,11 +36,14 @@ jobs:
         run: |
           cd lineage
           
-          # Samsung Galaxy Tab 4 (degaswifi) için gerekli tüm ağaçları ve ortak dosyaları klonluyoruz
-          git clone https://github.com/LineageOS/android_device_samsung_degaswifi.git -b cm-14.1 device/samsung/degaswifi
-          git clone https://github.com/LineageOS/android_device_samsung_ms822-common.git -b cm-14.1 device/samsung/ms822-common
-          git clone https://github.com/LineageOS/android_kernel_samsung_ms822.git -b cm-14.1 kernel/samsung/ms822
+          # Doğru local_manifests kullanarak cihaz dosyalarını otomatik ve hatasız çekiyoruz
+          mkdir -p .repo/local_manifests
+          echo '<?xml version="1.0" encoding="UTF-8"?>' > .repo/local_manifests/roomservice.xml
+          echo '<manifest>' >> .repo/local_manifests/roomservice.xml
+          echo '  <project name="LineageOS/android_device_samsung_degaswifi" path="device/samsung/degaswifi" remote="github" revision="cm-14.1" />' >> .repo/local_manifests/roomservice.xml
+          echo '</manifest>' >> .repo/local_manifests/roomservice.xml
           
-          # Derleme ortamını hazırlayıp komutu başlatıyoruz
+          repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune --force-sync -j8
+          
           source build/envsetup.sh
           brunch degaswifi
