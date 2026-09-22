@@ -1,4 +1,4 @@
-name: SM-T230 Build
+name: LineageOS Build for SM-T230
 
 on:
   workflow_dispatch:
@@ -6,34 +6,47 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    steps:
-      - name: Alanı Temizle
-        run: |
-          sudo rm -rf /usr/share/dotnet /opt/gh /usr/local/lib/android/sdk
-          df -h
 
-      - name: Bağımlılıkları ve Repo Kur
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Maximize Disk Space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 4096
+          swap-size-mb: 10240
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+
+      - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zlib1g-dev python3 openjdk-8-jdk make zip
+          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zlib1g-dev
+
+      - name: Initialize Repo and Sync
+        run: |
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
-
-      - name: Derlemeyi Başlat
-        run: |
-          export PATH="$HOME/bin:$PATH"
-          mkdir -p ~/lineage && cd ~/lineage
-          git config --global user.name "Hamza"
-          git config --global user.email "hamza@builder.local"
+          export PATH=~/bin:$PATH
+          
+          mkdir -p lineage
+          cd lineage
+          git config --global user.name "Builder"
+          git config --global user.email "builder@action.com"
+          
           repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --depth=1
+          repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune --force-sync -j$(nproc)
+
+      - name: Clone Device Tree and Build
+        run: |
+          cd lineage
+          git clone https://github.com/LineageOS/android_device_samsung_degaswifi.git -b lineage-14.1 device/samsung/degaswifi || git clone https://github.com/LineageOS/android_device_samsung_degaswifi.git -b cm-14.1 device/samsung/degaswifi
           
-          mkdir -p .repo/local_manifests
-          echo '<?xml version="1.0" encoding="UTF-8"?><manifest><project name="LineageOS/android_device_samsung_degaswifi" path="device/samsung/degaswifi" remote="github" revision="cm-14.1" /><project name="LineageOS/android_kernel_samsung_pxa1088" path="kernel/samsung/pxa1088" remote="github" revision="cm-14.1" /></manifest>' > .repo/local_manifests/roomservice.xml
-          
-          repo sync -c -j8 --force-sync --no-clone-bundle --no-tags --optimized-fetch
-          
-          export ALLOW_MISSING_DEPENDENCIES=true
           source build/envsetup.sh
-          lunch lineage_degaswifi-userdebug
-          mka bacon -j8
+          breakfast degaswifi
+          mka bacon
