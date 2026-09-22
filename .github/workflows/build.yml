@@ -1,14 +1,13 @@
-name: LineageOS 14.1 Build Full
+name: LineageOS 14.1 Build for SM-T230
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
-    
+    runs-on: ubuntu-22.04
     steps:
-      - name: Alanı Temizle
+      - name: Alanı Temizle ve Arttır
         run: |
           sudo rm -rf /usr/share/dotnet /opt/gh /usr/local/lib/android/sdk
           sudo apt-get clean
@@ -17,45 +16,34 @@ jobs:
       - name: Bağımlılıkları Kur
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zlib1g-dev python2 python3 openjdk-8-jdk make zip
+          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev libelf-dev libncurses5 libncurses5-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zlib1g-dev python3 python-is-python3
 
-      - name: Git Yapılandırması ve Repo Kurulumu
+      - name: Kaynak Kodları İndir, Manifest Ekle ve Derle
         run: |
-          git config --global user.name "Builder"
-          git config --global user.email "builder@action.com"
-          
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
-          echo "$HOME/bin" >> $GITHUB_PATH
-
-      - name: Kaynak Kodları ve Cihaz Ağacını Hazırla
-        run: |
-          mkdir ~/lineage && cd ~/lineage
-          repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --depth=1
           
-          # Cihaz ağacını local_manifests ile ekliyoruz
+          export PATH=~/bin:$PATH
+          
+          mkdir -p ~/lineage && cd ~/lineage
+          git config --global user.name "Builder"
+          git config --global user.email "builder@action.com"
+          
+          repo init -u https://github.com/LineageOS/android.git -b cm-14.1
+          
           mkdir -p .repo/local_manifests
-          cat << 'EOF' > .repo/local_manifests/roomservice.xml
-          <?xml version="1.0" encoding="UTF-8"?>
-          <manifest>
-            <project name="LineageOS/android_device_samsung_degaswifi" path="device/samsung/degaswifi" remote="github" revision="cm-14.1" />
-            <project name="LineageOS/android_kernel_samsung_pxa1088" path="kernel/samsung/pxa1088" remote="github" revision="cm-14.1" />
-          </manifest>
-          EOF
-
-          repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune --force-sync -j8
-
-      - name: Derlemeyi Başlat (ZIP Üret)
-        run: |
-          cd ~/lineage
+          echo '<?xml version="1.0" encoding="UTF-8"?><manifest><project name="LineageOS/android_device_samsung_degaswifi" path="device/samsung/degaswifi" remote="github" revision="cm-14.1" /><project name="LineageOS/android_kernel_samsung_pxa1088" path="kernel/samsung/pxa1088" remote="github" revision="cm-14.1" /></manifest>' > .repo/local_manifests/roomservice.xml
+          
+          repo sync -c -j8 --force-sync --no-clone-bundle --no-tags --optimized-fetch
+          
           export ALLOW_MISSING_DEPENDENCIES=true
           source build/envsetup.sh
           lunch lineage_degaswifi-userdebug
-          mka bacon -j$(nproc)
+          mka bacon -j8
 
-      - name: ZIP Dosyasını Yükle (Artifact)
+      - name: Upload ROM Zip
         uses: actions/upload-artifact@v4
         with:
-          name: LineageOS-14.1-SM-T230-ZIP
+          name: lineage-14.1-SM-T230-Zip
           path: ~/lineage/out/target/product/degaswifi/*.zip
