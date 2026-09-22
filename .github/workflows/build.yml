@@ -32,18 +32,14 @@ jobs:
           repo init -u https://github.com/LineageOS/android.git -b cm-14.1
           repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune --force-sync -j8
 
-      - name: Cihaz Ağacını Çek ve Derlemeyi Başlat
+      - name: Tarayıcıdaki Cihaz Ağacını Klonla ve Başlat
         run: |
           export PATH=~/bin:$PATH
           cd lineage
           
-          mkdir -p .repo/local_manifests
-          echo '<?xml version="1.0" encoding="UTF-8"?>' > .repo/local_manifests/roomservice.xml
-          echo '<manifest>' >> .repo/local_manifests/roomservice.xml
-          echo '  <project name="LineageOS/android_device_samsung_degaswifi" path="device/samsung/degaswifi" remote="github" revision="cm-14.1" />' >> .repo/local_manifests/roomservice.xml
-          echo '</manifest>' >> .repo/local_manifests/roomservice.xml
-          
-          repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune --force-sync -j8
+          # Doğrudan ekranda gösterdiğin güncel depoyu klonluyoruz
+          rm -rf device/samsung/degaswifi
+          git clone https://github.com/simionelomu/SM-T230NU-Degaswifi-LineageOS-14.1.git device/samsung/degaswifi
           
           source build/envsetup.sh
           brunch degaswifi
