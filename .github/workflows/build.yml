@@ -34,9 +34,9 @@ jobs:
 
       - name: Cihaz Ağacını Çek ve Derlemeyi Başlat
         run: |
+          export PATH=~/bin:$PATH
           cd lineage
           
-          # Doğru local_manifests kullanarak cihaz dosyalarını otomatik ve hatasız çekiyoruz
           mkdir -p .repo/local_manifests
           echo '<?xml version="1.0" encoding="UTF-8"?>' > .repo/local_manifests/roomservice.xml
           echo '<manifest>' >> .repo/local_manifests/roomservice.xml
