@@ -35,7 +35,12 @@ jobs:
       - name: Cihaz Ağacını Çek ve Derlemeyi Başlat
         run: |
           cd lineage
-          git clone https://github.com/LineageOS/android_device_samsung_degaswifi.git -b lineage-14.1 device/samsung/degaswifi
           
+          # Samsung Galaxy Tab 4 (degaswifi) için gerekli tüm ağaçları ve ortak dosyaları klonluyoruz
+          git clone https://github.com/LineageOS/android_device_samsung_degaswifi.git -b cm-14.1 device/samsung/degaswifi
+          git clone https://github.com/LineageOS/android_device_samsung_ms822-common.git -b cm-14.1 device/samsung/ms822-common
+          git clone https://github.com/LineageOS/android_kernel_samsung_ms822.git -b cm-14.1 kernel/samsung/ms822
+          
+          # Derleme ortamını hazırlayıp komutu başlatıyoruz
           source build/envsetup.sh
           brunch degaswifi
