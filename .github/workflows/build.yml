@@ -1,47 +1,75 @@
-name: LineageOS Build
+name: LineageOS 14.1 Build for SM-T230
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
+    
     steps:
-      - name: Alanı Temizle ve Arttır
-        run: |
-          sudo rm -rf /usr/share/dotnet /opt/gh /usr/local/lib/android/sdk
-          sudo apt-get clean
-          df -h
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Bağımlılıkları Kur
+      - name: Maximize Build Space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 10240
+          swap-size-mb: 16384
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+
+      - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev libelf-dev libncurses5 libncurses5-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zlib1g-dev python3 python-is-python3
+          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zlib1g-dev python2 python3 openjdk-8-jdk make zip
 
-      - name: Kaynak Kodları İndir ve Repo Kurulumu
+      - name: Configure Git
+        run: |
+          git config --global user.name "Hamza"
+          git config --global user.email "hamza@builder.local"
+
+      - name: Install Repo Tool
         run: |
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
-          
-          export PATH=~/bin:$PATH
-          
-          mkdir lineage && cd lineage
-          git config --global user.name "Builder"
-          git config --global user.email "builder@action.com"
-          repo init -u https://github.com/LineageOS/android.git -b cm-14.1
-          repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune --force-sync -j8
+          echo "$HOME/bin" >> $GITHUB_PATH
 
-      - name: Derleme Ortamını Başlat ve Derle
+      - name: Initialize LineageOS Manifest
         run: |
-          export PATH=~/bin:$PATH
-          cd lineage
-          
-          # Doğru konuma klonlandığından emin oluyoruz
+          mkdir -p ~/lineage
+          cd ~/lineage
+          repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --depth=1
+
+      - name: Sync Source Code
+        run: |
+          cd ~/lineage
+          repo sync -c -j$(nproc) --force-sync --no-clone-bundle --no-tags --optimized-fetch
+
+      - name: Setup Device Tree and Fix Makefile
+        run: |
+          cd ~/lineage
           rm -rf device/samsung/degaswifi
           git clone https://github.com/simionelomu/SM-T230NU-Degaswifi-LineageOS-14.1.git device/samsung/degaswifi
           
-          # Derleme ortamını hazırlayıp doğrudan mka bacon komutuyla tetikliyoruz
+          # Makefile içindeki olası boşluk/tab hatalarını temizlemek için örnek düzeltme
+          if [ -f device/samsung/degaswifi/aosp_degaswifi.mk ]; then
+            sed -i 's/\r$//' device/samsung/degaswifi/aosp_degaswifi.mk
+          fi
+
+      - name: Start Compilation
+        run: |
+          cd ~/lineage
+          export ALLOW_MISSING_DEPENDENCIES=true
           source build/envsetup.sh
           lunch lineage_degaswifi-userdebug
           mka bacon -j$(nproc)
+
+      - name: Upload ROM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LineageOS-14.1-SM-T230
+          path: ~/lineage/out/target/product/degaswifi/*.zip
