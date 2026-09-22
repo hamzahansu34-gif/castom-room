@@ -1,75 +1,39 @@
-name: LineageOS 14.1 Build for SM-T230
+name: SM-T230 Build
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
-    
+    runs-on: ubuntu-22.04
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - name: Alanı Temizle
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/gh /usr/local/lib/android/sdk
+          df -h
 
-      - name: Maximize Build Space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 10240
-          swap-size-mb: 16384
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-
-      - name: Install System Dependencies
+      - name: Bağımlılıkları ve Repo Kur
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zlib1g-dev python2 python3 openjdk-8-jdk make zip
-
-      - name: Configure Git
-        run: |
-          git config --global user.name "Hamza"
-          git config --global user.email "hamza@builder.local"
-
-      - name: Install Repo Tool
-        run: |
+          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zlib1g-dev python3 openjdk-8-jdk make zip
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
-          echo "$HOME/bin" >> $GITHUB_PATH
 
-      - name: Initialize LineageOS Manifest
+      - name: Derlemeyi Başlat
         run: |
-          mkdir -p ~/lineage
-          cd ~/lineage
+          export PATH="$HOME/bin:$PATH"
+          mkdir -p ~/lineage && cd ~/lineage
+          git config --global user.name "Hamza"
+          git config --global user.email "hamza@builder.local"
           repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --depth=1
-
-      - name: Sync Source Code
-        run: |
-          cd ~/lineage
-          repo sync -c -j$(nproc) --force-sync --no-clone-bundle --no-tags --optimized-fetch
-
-      - name: Setup Device Tree and Fix Makefile
-        run: |
-          cd ~/lineage
-          rm -rf device/samsung/degaswifi
-          git clone https://github.com/simionelomu/SM-T230NU-Degaswifi-LineageOS-14.1.git device/samsung/degaswifi
           
-          # Makefile içindeki olası boşluk/tab hatalarını temizlemek için örnek düzeltme
-          if [ -f device/samsung/degaswifi/aosp_degaswifi.mk ]; then
-            sed -i 's/\r$//' device/samsung/degaswifi/aosp_degaswifi.mk
-          fi
-
-      - name: Start Compilation
-        run: |
-          cd ~/lineage
+          mkdir -p .repo/local_manifests
+          echo '<?xml version="1.0" encoding="UTF-8"?><manifest><project name="LineageOS/android_device_samsung_degaswifi" path="device/samsung/degaswifi" remote="github" revision="cm-14.1" /><project name="LineageOS/android_kernel_samsung_pxa1088" path="kernel/samsung/pxa1088" remote="github" revision="cm-14.1" /></manifest>' > .repo/local_manifests/roomservice.xml
+          
+          repo sync -c -j8 --force-sync --no-clone-bundle --no-tags --optimized-fetch
+          
           export ALLOW_MISSING_DEPENDENCIES=true
           source build/envsetup.sh
           lunch lineage_degaswifi-userdebug
-          mka bacon -j$(nproc)
-
-      - name: Upload ROM Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: LineageOS-14.1-SM-T230
-          path: ~/lineage/out/target/product/degaswifi/*.zip
+          mka bacon -j8
