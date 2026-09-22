@@ -1,4 +1,4 @@
-name: LineageOS Build for SM-T230NU
+name: LineageOS Build
 
 on:
   workflow_dispatch:
@@ -6,47 +6,40 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-
     steps:
-      - name: Maximize Disk Space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 4096
-          swap-size-mb: 10240
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-          remove-docker-images: 'true'
+      - name: Alanı Temizle ve Arttır
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/gh /usr/local/lib/android/sdk
+          sudo apt-get clean
+          df -h
 
-      - name: Install Dependencies
+      - name: Bağımlılıkları Kur
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zlib1g-dev
+          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev libelf-dev libncurses5 libncurses5-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zlib1g-dev python3 python-is-python3
 
-      - name: Initialize Repo and Sync LineageOS
+      - name: Kaynak Kodları İndir (Manifest)
         run: |
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
           export PATH=~/bin:$PATH
           
-          mkdir -p lineage
-          cd lineage
+          mkdir lineage && cd lineage
           git config --global user.name "Builder"
           git config --global user.email "builder@action.com"
-          
           repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --depth=1
-          repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune --force-sync -j$(nproc)
+          repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune --force-sync -j8
 
-      - name: Ekran Görüntüsündeki Cihaz Ağacını Ekle ve Derle
+      - name: Cihaz Ağacını Klonla ve Derle
         run: |
+          export PATH=~/bin:$PATH
           cd lineage
           
-          # Doğrudan ekranda gösterdiğin GitHub depolarını doğru yola (device/samsung/degaswifi) klonluyoruz
+          # Senin bulduğun SM-T230NU cihaz ağacını doğru klasöre çekiyoruz
+          mkdir -p device/samsung
           rm -rf device/samsung/degaswifi
           git clone https://github.com/simionelomu/SM-T230NU-Degaswifi-LineageOS-14.1.git device/samsung/degaswifi
           
           source build/envsetup.sh
-          breakfast degaswifi
-          mka bacon
+          brunch degaswifi
