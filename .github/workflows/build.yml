@@ -30,10 +30,10 @@ jobs:
           git config --global user.name "Builder"
           git config --global user.email "builder@action.com"
           
-          repo init -u https://github.com/LineageOS/android.git -b cm-14.1
+          repo init -u https://github.com/LineageOS/android.git -b lineage-14.1
           
           mkdir -p .repo/local_manifests
-          echo '<?xml version="1.0" encoding="UTF-8"?><manifest><project name="LineageOS/android_device_samsung_degaswifi" path="device/samsung/degaswifi" remote="github" revision="cm-14.1" /><project name="LineageOS/android_kernel_samsung_pxa1088" path="kernel/samsung/pxa1088" remote="github" revision="cm-14.1" /></manifest>' > .repo/local_manifests/roomservice.xml
+          echo '<?xml version="1.0" encoding="UTF-8"?><manifest><project name="LineageOS/android_device_samsung_degaswifi" path="device/samsung/degaswifi" remote="github" revision="lineage-14.1" /><project name="LineageOS/android_kernel_samsung_pxa1088" path="kernel/samsung/pxa1088" remote="github" revision="lineage-14.1" /></manifest>' > .repo/local_manifests/roomservice.xml
           
           repo sync -c -j8 --force-sync --no-clone-bundle --no-tags --optimized-fetch
           
