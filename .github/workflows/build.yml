@@ -32,14 +32,16 @@ jobs:
           repo init -u https://github.com/LineageOS/android.git -b cm-14.1
           repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune --force-sync -j8
 
-      - name: Tarayıcıdaki Cihaz Ağacını Klonla ve Başlat
+      - name: Derleme Ortamını Başlat ve Derle
         run: |
           export PATH=~/bin:$PATH
           cd lineage
           
-          # Doğrudan ekranda gösterdiğin güncel depoyu klonluyoruz
+          # Doğru konuma klonlandığından emin oluyoruz
           rm -rf device/samsung/degaswifi
           git clone https://github.com/simionelomu/SM-T230NU-Degaswifi-LineageOS-14.1.git device/samsung/degaswifi
           
+          # Derleme ortamını hazırlayıp doğrudan mka bacon komutuyla tetikliyoruz
           source build/envsetup.sh
-          brunch degaswifi
+          lunch lineage_degaswifi-userdebug
+          mka bacon -j$(nproc)
