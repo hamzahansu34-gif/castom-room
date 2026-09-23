@@ -7,36 +7,49 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Alanı Temizle ve Arttır
         run: |
           sudo rm -rf /usr/share/dotnet /opt/gh /usr/local/lib/android/sdk
-          sudo apt-get clean
           df -h
 
       - name: Bağımlılıkları Kur
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev libelf-dev libncurses5 libncurses5-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zlib1g-dev python3 python-is-python3
+          sudo apt-get install -y bc bison build-type ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zip zlib1g-dev
 
-      - name: Kaynak Kodları İndir, Manifest Ekle ve Derle
+      - name: Repo Aracını Kur
         run: |
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Git Yapılandırması
+        run: |
+          git config --global user.name "Hamza"
+          git config --global user.email "hamza@example.com"
+
+      - name: Kaynak Kodları İndir, Manifest Ekler ve Derle
+        run: |
+          mkdir -p ~/lineage
+          cd ~/lineage
+          repo init -u https://github.com/LineageOS/android.git -b cm-14.1
           
-          export PATH=~/bin:$PATH
-          
-          mkdir -p ~/lineage && cd ~/lineage
-          git config --global user.name "Builder"
-          git config --global user.email "builder@action.com"
-          
-          repo init -u https://github.com/LineageOS/android.git -b lineage-14.1
-          
+          # Cihaz manifest dosyasını buraya ekliyoruz (SM-T230 için)
           mkdir -p .repo/local_manifests
-          echo '<?xml version="1.0" encoding="UTF-8"?><manifest><project name="LineageOS/android_device_samsung_degaswifi" path="device/samsung/degaswifi" remote="github" revision="lineage-14.1" /><project name="LineageOS/android_kernel_samsung_pxa1088" path="kernel/samsung/pxa1088" remote="github" revision="lineage-14.1" /></manifest>' > .repo/local_manifests/roomservice.xml
-          
-          repo sync -c -j8 --force-sync --no-clone-bundle --no-tags --optimized-fetch
-          
+          echo '<?xml version="1.0" encoding="UTF-8"?>' > .repo/local_manifests/roomservice.xml
+          echo '<manifest>' >> .repo/local_manifests/roomservice.xml
+          echo '  <project name="LineageOS/android_device_samsung_degaswifi" path="device/samsung/degaswifi" remote="github" />' >> .repo/local_manifests/roomservice.xml
+          echo '  <project name="LineageOS/android_kernel_samsung_pxa1088" path="kernel/samsung/pxa1088" remote="github" />' >> .repo/local_manifests/roomservice.xml
+          echo '  <project name="TheMuppets/proprietary_vendor_samsung_degaswifi" path="vendor/samsung/degaswifi" remote="github" />' >> .repo/local_manifests/roomservice.xml
+          echo '</manifest>' >> .repo/local_manifests/roomservice.xml
+
+          repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j8
+
+          # Derleme Ortamını Hazırla ve Başlat
           export ALLOW_MISSING_DEPENDENCIES=true
           source build/envsetup.sh
           lunch lineage_degaswifi-userdebug
@@ -45,5 +58,5 @@ jobs:
       - name: Upload ROM Zip
         uses: actions/upload-artifact@v4
         with:
-          name: lineage-14.1-SM-T230-Zip
+          name: LineageOS-SM-T230-ROM
           path: ~/lineage/out/target/product/degaswifi/*.zip
