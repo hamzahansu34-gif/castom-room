@@ -18,7 +18,7 @@ jobs:
       - name: Bağımlılıkları Kur
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-type ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zip zlib1g-dev
+          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc yasm zip zlib1g-dev
 
       - name: Repo Aracını Kur
         run: |
@@ -38,7 +38,6 @@ jobs:
           cd ~/lineage
           repo init -u https://github.com/LineageOS/android.git -b cm-14.1
           
-          # Cihaz manifest dosyasını buraya ekliyoruz (SM-T230 için)
           mkdir -p .repo/local_manifests
           echo '<?xml version="1.0" encoding="UTF-8"?>' > .repo/local_manifests/roomservice.xml
           echo '<manifest>' >> .repo/local_manifests/roomservice.xml
@@ -49,7 +48,6 @@ jobs:
 
           repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j8
 
-          # Derleme Ortamını Hazırla ve Başlat
           export ALLOW_MISSING_DEPENDENCIES=true
           source build/envsetup.sh
           lunch lineage_degaswifi-userdebug
