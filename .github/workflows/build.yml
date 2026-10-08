@@ -1,53 +1,53 @@
-name: Build Android ROM T230
+name: T230 Custom Build
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    name: Build ROM
+    runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout Repository
+    - name: Check Out Repository
       uses: actions/checkout@v2
 
-    - name: Maximize Build Disk Space
-      uses: easimon/maximize-disk-space@master
+    - name: Free Disk Space (Ubuntu)
+      uses: jlumbroso/free-disk-space@main
       with:
-        root-reserve-mb: 512
-        swap-size-mb: 2048
-        remove-dotnet: 'true'
-        remove-android: 'true'
-        remove-haskell: 'true'
-        remove-codeql: 'true'
+        tool-cache: false
+        android: true
+        dotnet: true
+        haskell: true
+        large-packages: true
+        swap-storage: false
 
-    - name: Install Required Packages
+    - name: Install Build Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y git repo python2 curl g++-multilib gcc-multilib lib32ncurses-dev lib32z1-dev flex bison gperf build-essential zip zlib1g-dev libc6-dev-i386 libx11-dev libgl1-mesa-dev libxml2-utils xsltproc unzip
+        sudo apt-get install -y git repo python2 curl g++-multilib gcc-multilib lib32ncurses-dev lib32z1-dev flex bison gperf build-essential zip zlib1g-dev libc6-dev-i386 libx11-dev libgl1-mesa-dev libxml2-utils xsltproc unzip bc
 
-    - name: Configure Git Identity
+    - name: Setup Git Configuration
       run: |
         git config --global user.name "Hamza"
         git config --global user.email "hamza@example.com"
 
-    - name: Initialize Repo and Sync Source
+    - name: Fetch CyanogenMod 11 Source
       run: |
-        mkdir -p ~/rom
-        cd ~/rom
-        repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --depth=1
-        repo sync -c -j4 --force-sync --no-clone-bundle --no-tags
+        mkdir -p ~/cm11
+        cd ~/cm11
+        repo init -u https://github.com/CyanogenMod/android.git -b cm-11.0 --depth=1
+        repo sync -c -j8 --force-sync --no-clone-bundle --no-tags
 
-    - name: Clone Device Tree and Kernel
+    - name: Download Device Tree & Kernel
       run: |
-        cd ~/rom
+        cd ~/cm11
         mkdir -p device/samsung
-        git clone https://github.com/LineageOS/android_device_samsung_degaswifi.gith device/samsung/degaswifi --depth=1
-        git clone https://github.com/LineageOS/android_kernel_samsung_pxa1088.git kernel/samsung/pxa1088 --depth=1
+        git clone https://github.com/LineageOS/android_device_samsung_degaswifi.git -b cm-11.0 device/samsung/degaswifi --depth=1 || git clone https://github.com/LineageOS/android_device_samsung_degaswifi.git device/samsung/degaswifi --depth=1
 
-    - name: Start Compilation
+    - name: Compile ROM
       run: |
-        cd ~/rom
+        cd ~/cm11
         source build/envsetup.sh
-        lunch lineage_degaswifi-userdebug
-        mka bacon -j4
+        lunch cm_degaswifi-userdebug
+        mka bacon -j8
