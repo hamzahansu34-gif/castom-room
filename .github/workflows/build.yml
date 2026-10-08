@@ -1,4 +1,4 @@
-name: Build Android ROM
+name: Build Android ROM T230
 
 on:
   workflow_dispatch:
@@ -6,31 +6,48 @@ on:
 jobs:
   build:
     runs-on: ubuntu-20.04
-  steps:
-    - name: Checkout
+    
+    steps:
+    - name: Checkout Repository
       uses: actions/checkout@v2
 
-    - name: Set up Environment & Dependencies
-      run: |
-        sudo apt update && sudo apt install -y curl git repo python2
+    - name: Maximize Build Disk Space
+      uses: easimon/maximize-disk-space@master
+      with:
+        root-reserve-mb: 512
+        swap-size-mb: 2048
+        remove-dotnet: 'true'
+        remove-android: 'true'
+        remove-haskell: 'true'
+        remove-codeql: 'true'
 
-    - name: Init Repo & Sync
+    - name: Install Required Packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git repo python2 curl g++-multilib gcc-multilib lib32ncurses-dev lib32z1-dev flex bison gperf build-essential zip zlib1g-dev libc6-dev-i386 libx11-dev libgl1-mesa-dev libxml2-utils xsltproc unzip
+
+    - name: Configure Git Identity
+      run: |
+        git config --global user.name "Hamza"
+        git config --global user.email "hamza@example.com"
+
+    - name: Initialize Repo and Sync Source
       run: |
         mkdir -p ~/rom
         cd ~/rom
-        repo init -u https://github.com/LineageOS/android.git -b cm-14.1
-        repo sync -c -j8 --force-sync --no-clone-bundle --no-tags
+        repo init -u https://github.com/LineageOS/android.git -b cm-14.1 --depth=1
+        repo sync -c -j4 --force-sync --no-clone-bundle --no-tags
 
-    - name: Clone Device Tree
+    - name: Clone Device Tree and Kernel
       run: |
         cd ~/rom
         mkdir -p device/samsung
-        git clone https://github.com/LineageOS/android_device_samsung_degaswifi.git device/samsung/degaswifi
-        git clone https://github.com/LineageOS/android_kernel_samsung_pxa1088.git kernel/samsung/pxa1088
+        git clone https://github.com/LineageOS/android_device_samsung_degaswifi.gith device/samsung/degaswifi --depth=1
+        git clone https://github.com/LineageOS/android_kernel_samsung_pxa1088.git kernel/samsung/pxa1088 --depth=1
 
-    - name: Start Building
+    - name: Start Compilation
       run: |
         cd ~/rom
         source build/envsetup.sh
         lunch lineage_degaswifi-userdebug
-        mka bacon -j8
+        mka bacon -j4
