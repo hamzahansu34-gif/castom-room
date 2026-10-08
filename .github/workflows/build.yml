@@ -1,4 +1,4 @@
-name: T230 Custom Build
+name: T230 Custom Build - Android 5
 
 on:
   workflow_dispatch:
@@ -32,22 +32,22 @@ jobs:
         git config --global user.name "Hamza"
         git config --global user.email "hamza@example.com"
 
-    - name: Fetch CyanogenMod 11 Source
+    - name: Fetch CyanogenMod 12.1 Source
       run: |
-        mkdir -p ~/cm11
-        cd ~/cm11
-        repo init -u https://github.com/CyanogenMod/android.git -b cm-11.0 --depth=1
+        mkdir -p ~/cm12.1
+        cd ~/cm12.1
+        repo init -u https://github.com/CyanogenMod/android.git -b cm-12.1 --depth=1
         repo sync -c -j8 --force-sync --no-clone-bundle --no-tags
 
     - name: Download Device Tree & Kernel
       run: |
-        cd ~/cm11
+        cd ~/cm12.1
         mkdir -p device/samsung
-        git clone https://github.com/LineageOS/android_device_samsung_degaswifi.git -b cm-11.0 device/samsung/degaswifi --depth=1 || git clone https://github.com/LineageOS/android_device_samsung_degaswifi.git device/samsung/degaswifi --depth=1
+        git clone https://github.com/LineageOS/android_device_samsung_degaswifi.git device/samsung/degaswifi --depth=1
 
     - name: Compile ROM
       run: |
-        cd ~/cm11
+        cd ~/cm12.1
         source build/envsetup.sh
         lunch cm_degaswifi-userdebug
         mka bacon -j8
